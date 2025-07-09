@@ -1,11 +1,17 @@
 import opencv as cv
-from typing import List, Callable
-import numpy as np
+from typing import List
+import numpy as n
+from gabor_strategy import GaborStrategy
+from strategy import Strategy
 
-def check_similarity(images: List[np.ndarray], strategy: Callable[[List[np.ndarray]], float]) -> float:
+gabor_strategy = GaborStrategy()
+
+
+def check_similarity(images: List[np.ndarray], strategy: Strategy) -> float:
     for image in images:
         assert image != None
-    return strategy(images)
+    print(strategy.get_similarity(images))
+    return 0.0
 
 def main():
     print("Hello from tool!")
