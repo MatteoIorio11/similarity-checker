@@ -2,10 +2,12 @@ from typing import List, Set
 import os
 import numpy as np
 from gabor_strategy import GaborStrategy
+from uqi import UQI
 from strategy import Strategy
 import cv2 as cv
 
 gabor_strategy = GaborStrategy()
+uqi = UQI()
 
 
 def check_similarity(images: List[np.ndarray], strategy: Strategy) -> float:
@@ -16,8 +18,11 @@ def check_similarity(images: List[np.ndarray], strategy: Strategy) -> float:
 
 def main():
     images: List[np.ndarray] = read_images()
-    score: float = check_similarity(images, gabor_strategy)
-    print(f"Similarity {score}")
+    cosine_score: float = check_similarity(images, gabor_strategy)
+    uqi_score: float = check_similarity(images, uqi)
+
+    print(f"Similarity cosine Similarity: {cosine_score}")
+    print(f"Similarity UQI: {uqi_score}")
 
 
 def read_images() -> List[np.ndarray]:
