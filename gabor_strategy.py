@@ -5,15 +5,26 @@ from sklearn.preprocessing import normalize
 from strategy import Strategy
 
 import cv2 as cv
-import random
 import numpy as np
+
+
+def generate_filters() -> List[np.ndarray]:
+    ksize: int = 21
+    orientations: int = 4
+    sigma: float = 4.0
+    g_lambda: float = 10.0
+    gamma: float = 0.5
+    psi: int = 0
+    return [cv.getGaborKernel((ksize, ksize), sigma, theta,
+                              g_lambda, gamma, psi, ktype=cv.CV_32F)
+            for theta in np.arange(0, np.pi, np.pi / orientations)]
 
 
 class GaborStrategy(Strategy):
     filters: List[np.ndarray] = []
 
     def __init__(self):
-        self.filters: List[np.ndarray] = self.generate_filters()
+        self.filters: List[np.ndarray] = generate_filters()
 
     def get_similarity(self, images: List[np.ndarray]) -> float:
         scores = []
@@ -29,23 +40,12 @@ class GaborStrategy(Strategy):
         step_y: int = height // grid_size[0]
         step_x: int = width // grid_size[1]
         features: List[float] = []
+        filtered: np.ndarray = np.zeros((1, 1), dtype=np.float32)
 
         for y in range(0, height - patch_size + 1, step_y):
             for x in range(0, width - patch_size + 1, step_x):
                 patch: np.ndarray = image[y:y + patch_size, x:x + patch_size]
-                cv.imwrite(f"patch{random.randint(0, 100)}.jpg", patch)
-                patch_features: List[float] = [cv.filter2D(patch, cv.CV_32F, fil).mean() for fil in self.filters]
-                features.extend(patch_features)
+                for current_filter in self.filters:
+                    filtered: np.ndarray = cv.filter2D(patch, cv.CV_32F, current_filter)
+                features.extend([np.sum(filtered ** 2), filtered.std()])
         return np.array(features)
-
-    def generate_filters(self) -> List[np.ndarray]:
-        ksize: int = 21
-        orientations: int = 4
-        sigma: float = 4.0
-        glambda: float = 10.0
-        gamma: float = 0.5
-        psi: int = 0
-        return [cv.getGaborKernel((ksize, ksize), sigma, theta,
-                                  glambda, gamma, psi, ktype=cv.CV_32F)
-                for theta in np.arange(0, np.pi, np.pi / orientations)]
-
