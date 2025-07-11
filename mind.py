@@ -20,6 +20,7 @@ def get_descriptors(image: np.ndarray, patch_radius: int = 1, search_radius: int
     descriptor = np.zeros((h, w, (2 * search_radius + 1) ** 2 - 1), dtype=np.float32)
 
     # Pad image
+    image = image.astype(np.float32)
     padded = np.pad(image, pad, mode='reflect')
 
     # Center patch (always same region)
@@ -45,7 +46,8 @@ def get_descriptors(image: np.ndarray, patch_radius: int = 1, search_radius: int
             idx += 1
 
     # Normalize the descriptor
-    descriptor -= np.min(descriptor, axis=-1, keepdims=True)
+    mean: float = np.mean(descriptor, axis=-1, keepdims=True)
+    descriptor = np.exp(-descriptor / (mean + 1e-6))
     descriptor /= np.sum(descriptor, axis=-1, keepdims=True) + 1e-6
 
     return descriptor
@@ -53,6 +55,29 @@ def get_descriptors(image: np.ndarray, patch_radius: int = 1, search_radius: int
 
 class MIND(Strategy):
     def get_similarity(self, images: List[np.ndarray]) -> float:
-        descriptor1: np.ndarray = get_descriptors(images[0]).reshape(-1)
-        descriptor2: np.ndarray = get_descriptors(images[1]).reshape(-1)
-        return cosine_similarity([descriptor1], [descriptor2])[0][0]
+        descriptor1: np.ndarray = get_descriptors(images[0])
+        descriptor2: np.ndarray = get_descriptors(images[1])
+        assert descriptor1.shape == descriptor2.shape, "Descriptor shapes must match"
+        H, W, D = descriptor1.shape
+
+        # Define patch/grid size (e.g., 32x32 blocks)
+        grid_size = 32
+        similarities = []
+
+        for y in range(0, H, grid_size):
+            for x in range(0, W, grid_size):
+                y_end = min(y + grid_size, H)
+                x_end = min(x + grid_size, W)
+
+                patch1 = descriptor1[y:y_end, x:x_end].reshape(-1, D)
+                patch2 = descriptor2[y:y_end, x:x_end].reshape(-1, D)
+
+                if patch1.shape[0] < 2:
+                    continue  # Skip very small patches
+
+                # Compute cosine similarity for the patch
+                sim = cosine_similarity(patch1, patch2).diagonal().mean()
+                similarities.append(sim)
+
+        # Return average local similarity
+        return float(np.mean(similarities))
