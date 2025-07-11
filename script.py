@@ -3,14 +3,15 @@ import os
 import numpy as np
 from gabor_strategy import GaborStrategy
 from uqi import UQI
-from mind import MIND
 from strategy import Strategy
-
+import tkinter as tk
+from tkinter import filedialog
 import cv2 as cv
+from ssim import SSIM
 
 gabor_strategy: Strategy = GaborStrategy()
 uqi: Strategy = UQI()
-mind: Strategy = MIND()
+ssim: Strategy = SSIM()
 
 
 def check_similarity(images: List[np.ndarray], strategy: Strategy) -> float:
@@ -20,14 +21,14 @@ def check_similarity(images: List[np.ndarray], strategy: Strategy) -> float:
 
 
 def main():
-    images: List[np.ndarray] = reshape_images(read_images("cell"))
+    images: List[np.ndarray] = reshape_images(read_images(""))
     cosine_score: float = check_similarity(images, gabor_strategy)
     uqi_score: float = check_similarity(images, uqi)
-    mind_score: float = check_similarity(images, mind)
+    ssim_score: float = check_similarity(images, ssim)
 
-    print(f"Similarity Cosine Similarity: {cosine_score}")
+    print(f"Similarity Gabor: {cosine_score}")
     print(f"Similarity UQI: {uqi_score}")
-    print(f"Similarity MIND: {mind_score}")
+    print(f"Similarity SSIM: {ssim_score}")
 
 
 def reshape_images(images: List[np.ndarray]) -> List[np.ndarray]:
@@ -44,10 +45,12 @@ def reshape_images(images: List[np.ndarray]) -> List[np.ndarray]:
 
 
 def read_images(prefix: str) -> List[np.ndarray]:
-    current_path: str = "./images/affine"
-    files: List[str] = os.listdir(current_path)
+    root = tk.Tk()
+    root.withdraw()
+    file_path: str = filedialog.askdirectory(initialdir="Desktop")
+    files: List[str] = os.listdir(file_path)
     image_format: Set[str] = {"jpg", "png", "jpeg", "tif"}
-    return [cv.imread(os.path.join(current_path, file), cv.IMREAD_GRAYSCALE)
+    return [cv.imread(os.path.join(file_path, file), cv.IMREAD_GRAYSCALE)
             for file in files if file.split(".")[1] in image_format and prefix in file]
 
 
