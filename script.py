@@ -8,10 +8,12 @@ import tkinter as tk
 from tkinter import filedialog
 import cv2 as cv
 from ssim import SSIM
+from glcm import GLCM
 
 gabor_strategy: Strategy = GaborStrategy()
 uqi: Strategy = UQI()
 ssim: Strategy = SSIM()
+glcm: Strategy = GLCM()
 
 
 def check_similarity(images: List[np.ndarray], strategy: Strategy) -> float:
@@ -25,10 +27,12 @@ def main():
     cosine_score: float = check_similarity(images, gabor_strategy)
     uqi_score: float = check_similarity(images, uqi)
     ssim_score: float = check_similarity(images, ssim)
+    glcm_score: float = check_similarity(images, glcm)
 
     print(f"Similarity Gabor: {cosine_score}")
     print(f"Similarity UQI: {uqi_score}")
     print(f"Similarity SSIM: {ssim_score}")
+    print(f"Similarity GLCM: {glcm_score}")
 
 
 def reshape_images(images: List[np.ndarray]) -> List[np.ndarray]:
@@ -51,7 +55,7 @@ def read_images(prefix: str) -> List[np.ndarray]:
     files: List[str] = os.listdir(file_path)
     image_format: Set[str] = {"jpg", "png", "jpeg", "tif"}
     return [cv.imread(os.path.join(file_path, file), cv.IMREAD_GRAYSCALE)
-            for file in files if file.split(".")[1] in image_format and prefix in file]
+            for file in files if "." in file and file.split(".")[1] in image_format and prefix in file]
 
 
 if __name__ == "__main__":
